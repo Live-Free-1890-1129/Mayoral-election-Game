@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ファイルビューア＆ダウンローダー</title>
+    <title>カスタムGPT TRPG 設定ファイル</title>
     
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
@@ -38,6 +38,7 @@
         h2 {
             border-bottom: 2px solid #eee;
             padding-bottom: 5px;
+            margin-top: 10px;
         }
         hr {
             border: 0;
@@ -45,22 +46,22 @@
             margin: 20px 0;
         }
 
-        /* --- 変更点 (CSS) --- */
-        /* ボタンのグリッドレイアウト */
+        /* ボタンのデザイン */
         .button-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 15px;
         }
-
-        /* 閲覧ボタンとDLボタンを横並びにするコンテナ */
-        .file-row {
-            display: flex; /* 横並び */
-            align-items: center; /* 中央揃え */
-            gap: 10px; /* ボタン間の隙間 */
+        @media (min-width: 600px) {
+            .button-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
-        
-        /* 汎用ボタン (カテゴリ選択など) */
+        .file-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
         .btn {
             display: block;
             width: 100%;
@@ -85,22 +86,16 @@
         }
         .btn-secondary { background-color: #6c757d; }
         .btn-secondary:hover { background-color: #5a6268; }
-
-        /* ファイルリスト内の閲覧ボタン */
-        .btn-view {
-            flex-grow: 1; /* 横幅をできるだけ広げる */
-        }
-
-        /* ダウンロードボタン (aタグ) */
+        .btn-view { flex-grow: 1; }
         .btn-download {
             display: block;
-            flex-shrink: 0; /* 縮まないようにする */
+            flex-shrink: 0;
             padding: 14px 18px;
             font-size: 16px;
             font-weight: 600;
             text-align: center;
             color: #fff;
-            background-color: #28a745; /* ダウンロード用の色 (緑) */
+            background-color: #28a745;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -112,15 +107,13 @@
             background-color: #218838;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-
-        /* 戻るボタン */
         .btn-back {
             background-color: #f8f9fa;
             color: #555;
             border: 1px solid #ddd;
             font-weight: normal;
-            width: auto; /* 幅を自動に */
-            display: inline-block; /* インラインブロック要素に */
+            width: auto;
+            display: inline-block;
         }
         .btn-back:hover {
             background-color: #e2e6ea;
@@ -128,41 +121,59 @@
             transform: none;
             box-shadow: none;
         }
-        /* --- 変更点ここまで --- */
 
-
-        /* ファイル内容の表示エリア (変更なし) */
+        /* ファイル内容の表示エリア */
         #file-content {
             background: #fdfdfd;
             border: 1px solid #e0e0e0;
             border-radius: 5px;
-            padding: 15px 20px;
+            padding: 0;
             margin-top: 15px;
             max-height: 60vh;
             overflow-y: auto;
         }
-        .content-txt { white-space: pre-wrap; word-wrap: break-word; }
-        .content-md img { max-width: 100%; height: auto; border-radius: 4px; }
-        .content-md pre { background: #f4f4f4; padding: 12px; border-radius: 5px; overflow-x: auto; }
-        .content-md code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
-        .content-md blockquote { border-left: 4px solid #ddd; padding-left: 10px; color: #777; margin-left: 0; }
+        .content-txt {
+            padding: 15px 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .content-yaml pre, .content-md pre {
+            background: #f6f8fa;
+            padding: 16px;
+            overflow: auto;
+            border-radius: 5px;
+            margin: 0;
+        }
+        .content-yaml code, .content-md code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+        }
+        .content-md { padding: 15px 20px; }
+        .content-md > *:first-child { margin-top: 0; }
+        .content-md img { max-width: 100%; }
+        .content-md blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 10px;
+            color: #777;
+            margin-left: 0;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>ファイルビューア & ダウンローダー</h1>
+        <h1>カスタムGPT TRPG 設定ファイル</h1>
 
         <div id="category-view">
-            <p>閲覧またはダウンロードしたいカテゴリを選択してください。</p>
+            <p>閲覧モードを選択してください。</p>
             <div class="button-grid">
                 <button class="btn" onclick="showFileList('player')">プレイヤー用</button>
-                <button class="btn btn-secondary" onclick="showFileList('admin')">設定・プロンプト閲覧用</button>
+                <button class="btn btn-secondary" onclick="showFileList('admin')">設定・プロンプト用 (GM)</button>
             </div>
         </div>
 
         <div id="file-list-view" style="display:none;">
-            <button class="btn btn-back" onclick="showView('category-view')">カテゴリ選択に戻る</button>
+            <button class="btn btn-back" onclick="showView('category-view')">モード選択に戻る</button>
             <hr>
             <div id="file-list-buttons" class="button-grid">
                 </div>
@@ -177,36 +188,105 @@
     </div>
 
     <script>
-        // ----------------------------------------------------
-        // ★★★ 設定箇所 ★★★
-        // ----------------------------------------------------
-        // 'name': 閲覧ボタンに表示される名前
-        // 'path': 実際のファイルパス
-        // 'downloadName': (オプション) ダウンロード時の推奨ファイル名。省略可。
-        
-        const fileStructure = {
-            'player': [
-                { name: 'ルールブック (テキスト)', path: 'files/player/rulebook.txt', downloadName: 'Rulebook.txt' },
-                { name: 'キャラクターシート (Markdown)', path: 'files/player/charsheet.md' }, // downloadNameは省略
-                { name: '世界観設定', path: 'files/player/world.txt', downloadName: 'WorldSetting.txt' }
-            ],
-            'admin': [
-                { name: 'シナリオ本文 (Markdown)', path: 'files/admin/scenario.md' },
-                { name: 'GM用プロンプト一覧', path: 'files/admin/prompts.txt' },
-                { name: 'NPCデータ (Markdown)', path: 'files/admin/npc.md' }
-            ]
-        };
+    
+        // ================================================================== //
+        // ================================================================== //
+        //                                                                    //
+        //                  ★★★ ファイル設定箇所 ★★★                        //
+        //                                                                    //
+        //   ファイルを追加・削除・変更する場合は、以下の `allFiles` の       //
+        //   中身（ [...] の部分）だけを編集してください。                    //
+        //                                                                    //
+        // ================================================================== //
+        // ================================================================== //
 
-        // ----------------------------------------------------
-        // ★★★ 設定はここまで ★★★
-        // ----------------------------------------------------
+        /*
+         * ファイル設定の書き方：
+         * {
+         * name: "ボタンに表示する名前",
+         * path: "リポジトリ内のファイルパス (例: 'files/ファイル名.yaml')",
+         * downloadName: "ダウンロード時の推奨ファイル名 (省略可)",
+         * roles: ['player', 'admin']  <- プレイヤーとGM両方が閲覧可
+         * }
+         * * GMのみに表示したい場合：
+         * roles: ['admin']
+         */
+
+        const allFiles = [
+            { 
+                name: '市議会議員リスト', 
+                path: 'files/市議会議員.yaml', 
+                downloadName: 'councillors.yaml',
+                roles: ['player', 'admin'] 
+            },
+            { 
+                name: '政党リスト', 
+                path: 'files/政党_parties.yaml', 
+                downloadName: 'parties.yaml',
+                roles: ['player', 'admin'] 
+            },
+            { 
+                name: '前回市長選データ', 
+                path: 'files/前回市長選.yaml', 
+                downloadName: 'last_election.yaml',
+                roles: ['player', 'admin'] 
+            },
+            { 
+                name: '操作キャラクター (PL用)', 
+                path: 'files/操作キャラ.yaml', 
+                downloadName: 'player_characters.yaml',
+                roles: ['player', 'admin'] 
+            },
+            { 
+                name: '支援団体リスト', 
+                path: 'files/団体_groups.yaml', 
+                downloadName: 'groups.yaml',
+                roles: ['player', 'admin'] 
+            },
+            { 
+                name: '市の設定 (世界観)', 
+                path: 'files/市設定_city.yaml', 
+                downloadName: 'city_setting.yaml',
+                roles: ['player', 'admin'] 
+            },
+            { 
+                name: '市役所組織図', 
+                path: 'files/市役所.yaml', 
+                downloadName: 'city_hall.yaml',
+                roles: ['player', 'admin'] 
+            },
+            { 
+                name: '【GM用】友好度データ', 
+                path: 'files/友好度.yaml', 
+                downloadName: 'friendship_data.yaml',
+                roles: ['admin'] // ★ admin (GM) のみ閲覧可能
+            }
+            
+            // ↓ 新しいファイルを追加する場合は、カンマ(,)を忘れずに、
+            //   この下に追加してください。
+            // { 
+            //   name: '新しいファイル', 
+            //   path: 'files/new_file.txt', 
+            //   roles: ['player', 'admin'] 
+            // },
+
+        ];
+
+        // ================================================================== //
+        // ================================================================== //
+        //                                                                    //
+        //                  ★★★ 設定箇所はここまで ★★★                    //
+        //                （これより下は変更不要です）                      //
+        //                                                                    //
+        // ================================================================== //
+        // ================================================================== //
 
 
-        let currentCategory = '';
+        let currentViewId = 'category-view';
         const views = ['category-view', 'file-list-view', 'content-view'];
 
-        // (showView関数 - 変更なし)
         function showView(viewId) {
+            currentViewId = viewId;
             views.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -217,77 +297,55 @@
                 document.getElementById('file-content').innerHTML = '';
                 document.getElementById('file-title').innerHTML = '';
             }
+            if (viewId === 'file-list-view') {
+                document.getElementById('file-content').innerHTML = '';
+                document.getElementById('file-title').innerHTML = '';
+            }
         }
 
-        
-        /**
-         * --- 変更点 (JavaScript) ---
-         * カテゴリボタンが押された時の処理
-         * @param {string} category 'player' または 'admin'
-         */
-        function showFileList(category) {
-            currentCategory = category;
-            const files = fileStructure[category];
+        function showFileList(role) {
+            const filesToShow = allFiles.filter(file => file.roles.includes(role));
             const listContainer = document.getElementById('file-list-buttons');
-            
-            listContainer.innerHTML = ''; // コンテナをクリア
+            listContainer.innerHTML = ''; 
 
-            if (!files || files.length === 0) {
+            if (filesToShow.length === 0) {
                 listContainer.innerHTML = '<p>このカテゴリにはファイルが登録されていません。</p>';
                 showView('file-list-view');
                 return;
             }
 
-            // ファイルごとに「行」を作成
-            files.forEach(file => {
-                // 1. 閲覧ボタンとDLボタンをまとめる行コンテナ (div)
+            const buttonClass = (role === 'player') ? 'btn' : 'btn btn-secondary';
+
+            filesToShow.forEach(file => {
                 const row = document.createElement('div');
                 row.className = 'file-row';
 
-                // 2. 閲覧ボタン (button)
                 const viewBtn = document.createElement('button');
-                // カテゴリによってボタンの色を変える
-                const categoryClass = (category === 'player') ? 'btn' : 'btn btn-secondary';
-                viewBtn.className = `${categoryClass} btn-view`; // 閲覧ボタン用のクラスも追加
+                viewBtn.className = `${buttonClass} btn-view`;
                 viewBtn.textContent = file.name;
                 viewBtn.onclick = () => loadFile(file.name, file.path);
                 
-                // 3. ダウンロードボタン (a)
                 const downloadBtn = document.createElement('a');
-                downloadBtn.className = 'btn-download'; // ダウンロードボタン用のスタイル
-                downloadBtn.href = file.path; // リンク先はファイルパス
-                downloadBtn.textContent = 'DL'; // ボタンのテキスト (例: "DL" や "↓")
-
-                // ★ ダウンロード機能の核 ★
-                // download属性を設定
-                // file.downloadNameが設定されていればそれを使い、
-                // なければパスからファイル名を自動取得 (例: "files/a.txt" -> "a.txt")
+                downloadBtn.className = 'btn-download';
+                downloadBtn.href = file.path;
+                downloadBtn.textContent = 'DL';
                 downloadBtn.download = file.downloadName || file.path.split('/').pop();
 
-                // 4. 行コンテナにボタンを追加
                 row.appendChild(viewBtn);
                 row.appendChild(downloadBtn);
-                
-                // 5. 最後に、行をリストコンテナに追加
                 listContainer.appendChild(row);
             });
 
             showView('file-list-view');
         }
-        // --- 変更点ここまで ---
 
-
-        /**
-         * ファイル名ボタンが押された時の処理 (変更なし)
-         * @param {string} fileName ボタンに表示された名前
-         * @param {string} filePath 読み込むファイルのパス
-         */
         async function loadFile(fileName, filePath) {
             const contentEl = document.getElementById('file-content');
             const titleEl = document.getElementById('file-title');
             
             titleEl.textContent = fileName;
             contentEl.innerHTML = '読み込み中...';
+            contentEl.className = '';
             showView('content-view');
 
             try {
@@ -298,27 +356,32 @@
                 }
 
                 const text = await response.text();
+                
                 const isMarkdown = filePath.endsWith('.md') || filePath.endsWith('.markdown');
+                const isYaml = filePath.endsWith('.yaml') || filePath.endsWith('.yml');
 
                 if (isMarkdown && typeof marked !== 'undefined') {
                     contentEl.innerHTML = marked.parse(text);
                     contentEl.className = 'content-md';
+                } else if (isYaml) {
+                    contentEl.innerHTML = '';
+                    const pre = document.createElement('pre');
+                    const code = document.createElement('code');
+                    code.textContent = text;
+                    pre.appendChild(code);
+                    contentEl.appendChild(pre);
+                    contentEl.className = 'content-yaml';
                 } else {
-                    if (isMarkdown) {
-                        console.warn('Marked.jsが読み込まれていないため、Markdownをテキストとして表示します。');
-                    }
                     contentEl.textContent = text;
                     contentEl.className = 'content-txt';
                 }
 
             } catch (error) {
                 console.error('ファイルの読み込みに失敗しました:', error);
-                contentEl.innerHTML = `<p style="color: red; font-weight: bold;">エラー: ${error.message}</p><p>ファイルパスが正しいか、GitHubリポジトリにファイルがプッシュされているか確認してください。</p>`;
-                contentEl.className = '';
+                contentEl.innerHTML = `<p style="color: red; font-weight: bold; padding: 15px;">エラー: ${error.message}</p><p style="padding: 0 15px;">ファイルパスが正しいか、GitHubリポジトリにファイルがプッシュされているか確認してください。</p>`;
             }
         }
 
-        // ページの初期表示 (変更なし)
         showView('category-view');
 
     </script>
