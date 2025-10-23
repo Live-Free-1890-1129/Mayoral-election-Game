@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ファイルビューア＆ダウンローダー</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <style>
+        /* ページ全体のデザイン */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.07);
+            padding: 25px 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+        h2 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 20px 0;
+        }
+
+        /* --- 変更点 (CSS) --- */
+        /* ボタンのグリッドレイアウト */
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        /* 閲覧ボタンとDLボタンを横並びにするコンテナ */
+        .file-row {
+            display: flex; /* 横並び */
+            align-items: center; /* 中央揃え */
+            gap: 10px; /* ボタン間の隙間 */
+        }
+        
+        /* 汎用ボタン (カテゴリ選択など) */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            text-decoration: none;
+            line-height: 1.5;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #5a6268; }
+
+        /* ファイルリスト内の閲覧ボタン */
+        .btn-view {
+            flex-grow: 1; /* 横幅をできるだけ広げる */
+        }
+
+        /* ダウンロードボタン (aタグ) */
+        .btn-download {
+            display: block;
+            flex-shrink: 0; /* 縮まないようにする */
+            padding: 14px 18px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            color: #fff;
+            background-color: #28a745; /* ダウンロード用の色 (緑) */
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            line-height: 1.5;
+        }
+        .btn-download:hover {
+            background-color: #218838;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* 戻るボタン */
+        .btn-back {
+            background-color: #f8f9fa;
+            color: #555;
+            border: 1px solid #ddd;
+            font-weight: normal;
+            width: auto; /* 幅を自動に */
+            display: inline-block; /* インラインブロック要素に */
+        }
+        .btn-back:hover {
+            background-color: #e2e6ea;
+            color: #333;
+            transform: none;
+            box-shadow: none;
+        }
+        /* --- 変更点ここまで --- */
+
+
+        /* ファイル内容の表示エリア (変更なし) */
+        #file-content {
+            background: #fdfdfd;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 15px 20px;
+            margin-top: 15px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .content-txt { white-space: pre-wrap; word-wrap: break-word; }
+        .content-md img { max-width: 100%; height: auto; border-radius: 4px; }
+        .content-md pre { background: #f4f4f4; padding: 12px; border-radius: 5px; overflow-x: auto; }
+        .content-md code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+        .content-md blockquote { border-left: 4px solid #ddd; padding-left: 10px; color: #777; margin-left: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ファイルビューア & ダウンローダー</h1>
+
+        <div id="category-view">
+            <p>閲覧またはダウンロードしたいカテゴリを選択してください。</p>
+            <div class="button-grid">
+                <button class="btn" onclick="showFileList('player')">プレイヤー用</button>
+                <button class="btn btn-secondary" onclick="showFileList('admin')">設定・プロンプト閲覧用</button>
+            </div>
+        </div>
+
+        <div id="file-list-view" style="display:none;">
+            <button class="btn btn-back" onclick="showView('category-view')">カテゴリ選択に戻る</button>
+            <hr>
+            <div id="file-list-buttons" class="button-grid">
+                </div>
+        </div>
+
+        <div id="content-view" style="display:none;">
+            <button class="btn btn-back" onclick="showView('file-list-view')">ファイル一覧に戻る</button>
+            <h2 id="file-title"></h2>
+            <div id="file-content">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // ★★★ 設定箇所 ★★★
+        // ----------------------------------------------------
+        // 'name': 閲覧ボタンに表示される名前
+        // 'path': 実際のファイルパス
+        // 'downloadName': (オプション) ダウンロード時の推奨ファイル名。省略可。
+        
+        const fileStructure = {
+            'player': [
+                { name: 'ルールブック (テキスト)', path: 'files/player/rulebook.txt', downloadName: 'Rulebook.txt' },
+                { name: 'キャラクターシート (Markdown)', path: 'files/player/charsheet.md' }, // downloadNameは省略
+                { name: '世界観設定', path: 'files/player/world.txt', downloadName: 'WorldSetting.txt' }
+            ],
+            'admin': [
+                { name: 'シナリオ本文 (Markdown)', path: 'files/admin/scenario.md' },
+                { name: 'GM用プロンプト一覧', path: 'files/admin/prompts.txt' },
+                { name: 'NPCデータ (Markdown)', path: 'files/admin/npc.md' }
+            ]
+        };
+
+        // ----------------------------------------------------
+        // ★★★ 設定はここまで ★★★
+        // ----------------------------------------------------
+
+
+        let currentCategory = '';
+        const views = ['category-view', 'file-list-view', 'content-view'];
+
+        // (showView関数 - 変更なし)
+        function showView(viewId) {
+            views.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.display = (id === viewId) ? 'block' : 'none';
+                }
+            });
+            if (viewId === 'category-view') {
+                document.getElementById('file-content').innerHTML = '';
+                document.getElementById('file-title').innerHTML = '';
+            }
+        }
+
+        
+        /**
+         * --- 変更点 (JavaScript) ---
+         * カテゴリボタンが押された時の処理
+         * @param {string} category 'player' または 'admin'
+         */
+        function showFileList(category) {
+            currentCategory = category;
+            const files = fileStructure[category];
+            const listContainer = document.getElementById('file-list-buttons');
+            
+            listContainer.innerHTML = ''; // コンテナをクリア
+
+            if (!files || files.length === 0) {
+                listContainer.innerHTML = '<p>このカテゴリにはファイルが登録されていません。</p>';
+                showView('file-list-view');
+                return;
+            }
+
+            // ファイルごとに「行」を作成
+            files.forEach(file => {
+                // 1. 閲覧ボタンとDLボタンをまとめる行コンテナ (div)
+                const row = document.createElement('div');
+                row.className = 'file-row';
+
+                // 2. 閲覧ボタン (button)
+                const viewBtn = document.createElement('button');
+                // カテゴリによってボタンの色を変える
+                const categoryClass = (category === 'player') ? 'btn' : 'btn btn-secondary';
+                viewBtn.className = `${categoryClass} btn-view`; // 閲覧ボタン用のクラスも追加
+                viewBtn.textContent = file.name;
+                viewBtn.onclick = () => loadFile(file.name, file.path);
+                
+                // 3. ダウンロードボタン (a)
+                const downloadBtn = document.createElement('a');
+                downloadBtn.className = 'btn-download'; // ダウンロードボタン用のスタイル
+                downloadBtn.href = file.path; // リンク先はファイルパス
+                downloadBtn.textContent = 'DL'; // ボタンのテキスト (例: "DL" や "↓")
+
+                // ★ ダウンロード機能の核 ★
+                // download属性を設定
+                // file.downloadNameが設定されていればそれを使い、
+                // なければパスからファイル名を自動取得 (例: "files/a.txt" -> "a.txt")
+                downloadBtn.download = file.downloadName || file.path.split('/').pop();
+
+                // 4. 行コンテナにボタンを追加
+                row.appendChild(viewBtn);
+                row.appendChild(downloadBtn);
+                
+                // 5. 最後に、行をリストコンテナに追加
+                listContainer.appendChild(row);
+            });
+
+            showView('file-list-view');
+        }
+        // --- 変更点ここまで ---
+
+
+        /**
+         * ファイル名ボタンが押された時の処理 (変更なし)
+         * @param {string} fileName ボタンに表示された名前
+         * @param {string} filePath 読み込むファイルのパス
+         */
+        async function loadFile(fileName, filePath) {
+            const contentEl = document.getElementById('file-content');
+            const titleEl = document.getElementById('file-title');
+            
+            titleEl.textContent = fileName;
+            contentEl.innerHTML = '読み込み中...';
+            showView('content-view');
+
+            try {
+                const response = await fetch(filePath);
+                
+                if (!response.ok) {
+                    throw new Error(`ファイル (${filePath}) が見つかりません (HTTP ${response.status})`);
+                }
+
+                const text = await response.text();
+                const isMarkdown = filePath.endsWith('.md') || filePath.endsWith('.markdown');
+
+                if (isMarkdown && typeof marked !== 'undefined') {
+                    contentEl.innerHTML = marked.parse(text);
+                    contentEl.className = 'content-md';
+                } else {
+                    if (isMarkdown) {
+                        console.warn('Marked.jsが読み込まれていないため、Markdownをテキストとして表示します。');
+                    }
+                    contentEl.textContent = text;
+                    contentEl.className = 'content-txt';
+                }
+
+            } catch (error) {
+                console.error('ファイルの読み込みに失敗しました:', error);
+                contentEl.innerHTML = `<p style="color: red; font-weight: bold;">エラー: ${error.message}</p><p>ファイルパスが正しいか、GitHubリポジトリにファイルがプッシュされているか確認してください。</p>`;
+                contentEl.className = '';
+            }
+        }
+
+        // ページの初期表示 (変更なし)
+        showView('category-view');
+
+    </script>
+</body>
+</html>
