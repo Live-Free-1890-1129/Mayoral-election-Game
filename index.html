@@ -137,6 +137,7 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+        /* YAMLファイルはコードとして整形して表示 */
         .content-yaml pre, .content-md pre {
             background: #f6f8fa;
             padding: 16px;
@@ -352,36 +353,43 @@
                 const response = await fetch(filePath);
                 
                 if (!response.ok) {
+                    // 404エラーなどの場合、ここでエラーを投げる
                     throw new Error(`ファイル (${filePath}) が見つかりません (HTTP ${response.status})`);
                 }
 
                 const text = await response.text();
                 
+                // ファイルの拡張子を判定
                 const isMarkdown = filePath.endsWith('.md') || filePath.endsWith('.markdown');
                 const isYaml = filePath.endsWith('.yaml') || filePath.endsWith('.yml');
 
                 if (isMarkdown && typeof marked !== 'undefined') {
+                    // .mdファイル (Marked.jsでHTMLに変換)
                     contentEl.innerHTML = marked.parse(text);
                     contentEl.className = 'content-md';
                 } else if (isYaml) {
-                    contentEl.innerHTML = '';
+                    // .yamlファイル (pre/codeで整形)
+                    contentEl.innerHTML = ''; // クリア
                     const pre = document.createElement('pre');
                     const code = document.createElement('code');
-                    code.textContent = text;
+                    code.textContent = text; // HTMLエスケープを自動処理
                     pre.appendChild(code);
                     contentEl.appendChild(pre);
                     contentEl.className = 'content-yaml';
                 } else {
+                    // .txtファイルなど (そのまま)
                     contentEl.textContent = text;
                     contentEl.className = 'content-txt';
                 }
 
             } catch (error) {
+                // fetch失敗時や404エラー時の処理
                 console.error('ファイルの読み込みに失敗しました:', error);
                 contentEl.innerHTML = `<p style="color: red; font-weight: bold; padding: 15px;">エラー: ${error.message}</p><p style="padding: 0 15px;">ファイルパスが正しいか、GitHubリポジトリにファイルがプッシュされているか確認してください。</p>`;
             }
         }
 
+        // 最初にカテゴリ選択ビューを表示
         showView('category-view');
 
     </script>
